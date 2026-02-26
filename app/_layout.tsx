@@ -13,12 +13,17 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack
+        initialRouteName="login"
         screenOptions={{
           headerStyle: { backgroundColor: HEADER_BG },
           headerTintColor: '#FFFFFF',
           headerTitleStyle: { fontWeight: '700', fontSize: 18 },
         }}
       >
+        <Stack.Screen
+          name="login"
+          options={{ headerShown: false }}
+        />
         <Stack.Screen
           name="index"
           options={{
