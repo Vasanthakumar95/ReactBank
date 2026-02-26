@@ -3,11 +3,13 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { format } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -18,7 +20,7 @@ import TransactionCard from '@/components/TransactionCard';
 import { formatCurrency } from '@/utils/formatters';
 import { Transaction } from '@/types/transaction';
 
-function SummaryHeader({ transactions }: { transactions: Transaction[] }) {
+function SummaryHeader({ transactions, lastUpdated }: { transactions: Transaction[]; lastUpdated: Date | null }) {
   const total = transactions.reduce((sum, t) => sum + t.amount, 0);
   const { value, isNegative } = formatCurrency(total);
 
@@ -29,6 +31,9 @@ function SummaryHeader({ transactions }: { transactions: Transaction[] }) {
         {value}
       </Text>
       <Text style={summaryStyles.count}>{transactions.length} transaction{transactions.length !== 1 ? 's' : ''}</Text>
+      {lastUpdated !== null && (
+        <Text style={summaryStyles.lastUpdated}>Last updated: {format(lastUpdated, 'h:mm a')}</Text>
+      )}
     </View>
   );
 }
@@ -44,7 +49,7 @@ function EmptyState() {
 }
 
 export default function TransactionListScreen() {
-  const { transactions, isLoading, fetchTransactions } = useTransactionStore();
+  const { transactions, isLoading, isRefreshing, fetchTransactions, refreshTransactions, lastUpdated } = useTransactionStore();
   const { isAuthenticated, logout } = useAuthStore();
 
   useEffect(() => {
@@ -95,9 +100,17 @@ export default function TransactionListScreen() {
             }
           />
         )}
-        ListHeaderComponent={<SummaryHeader transactions={transactions} />}
+        ListHeaderComponent={<SummaryHeader transactions={transactions} lastUpdated={lastUpdated} />}
         ListEmptyComponent={<EmptyState />}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={refreshTransactions}
+            tintColor="#1a3c6e"
+            colors={['#1a3c6e']}
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -160,6 +173,11 @@ const summaryStyles = StyleSheet.create({
   count: {
     fontSize: 12,
     color: '#9CA3AF',
+  },
+  lastUpdated: {
+    fontSize: 11,
+    color: '#C4C9D4',
+    marginTop: 6,
   },
 });
 
