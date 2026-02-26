@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format, parseISO } from 'date-fns';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -21,8 +21,7 @@ export default function TransactionDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Header onBack={() => router.back()} />
+      <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#4F46E5" />
         </View>
@@ -34,8 +33,7 @@ export default function TransactionDetailScreen() {
 
   if (!transaction) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Header onBack={() => router.back()} />
+      <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
         <View style={styles.centered}>
           <Text style={styles.notFoundText}>Transaction not found.</Text>
         </View>
@@ -59,8 +57,16 @@ export default function TransactionDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Header onBack={() => router.back()} onShare={handleShare} />
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity onPress={handleShare} hitSlop={8}>
+              <Ionicons name="share-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Summary card */}
@@ -96,30 +102,6 @@ export default function TransactionDetailScreen() {
   );
 }
 
-function Header({
-  onBack,
-  onShare,
-}: {
-  onBack: () => void;
-  onShare?: () => void;
-}) {
-  return (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={onBack} style={styles.headerBtn} hitSlop={8}>
-        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-      <Text style={styles.headerTitle}>Transaction Detail</Text>
-      {onShare ? (
-        <TouchableOpacity onPress={onShare} style={styles.headerBtn} hitSlop={8}>
-          <Ionicons name="share-outline" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
-      ) : (
-        <View style={styles.headerBtn} />
-      )}
-    </View>
-  );
-}
-
 function DetailRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
   return (
     <View style={[styles.row, !last && styles.rowDivider]}>
@@ -142,26 +124,6 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: 16,
     color: '#6B7280',
-  },
-
-  // Header
-  header: {
-    backgroundColor: '#1A1A2E',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  headerBtn: {
-    width: 32,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#FFFFFF',
-    textAlign: 'center',
   },
 
   content: {

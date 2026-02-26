@@ -30,6 +30,11 @@ export default function TransactionCard({ transaction, onPress }: Props) {
         <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
           {value}
         </Text>
+        <View style={[styles.badge, isNegative ? styles.badgeDebit : styles.badgeCredit]}>
+          <Text style={[styles.badgeText, isNegative ? styles.badgeTextDebit : styles.badgeTextCredit]}>
+            {isNegative ? 'Debit' : 'Credit'}
+          </Text>
+        </View>
         <Text style={styles.date}>{formatDate(transaction.transferDate)}</Text>
       </View>
     </TouchableOpacity>
@@ -41,15 +46,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     marginHorizontal: 16,
     marginVertical: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowColor: '#1a3c6e',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F0F4F8',
   },
   avatar: {
     width: 44,
@@ -81,16 +88,38 @@ const styles = StyleSheet.create({
   },
   right: {
     alignItems: 'flex-end',
+    gap: 4,
   },
   amount: {
     fontSize: 15,
     fontWeight: '700',
-    marginBottom: 3,
   },
   positive: {
     color: '#16A34A',
   },
   negative: {
+    color: '#DC2626',
+  },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  badgeCredit: {
+    backgroundColor: '#DCFCE7',
+  },
+  badgeDebit: {
+    backgroundColor: '#FEE2E2',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  badgeTextCredit: {
+    color: '#16A34A',
+  },
+  badgeTextDebit: {
     color: '#DC2626',
   },
   date: {
