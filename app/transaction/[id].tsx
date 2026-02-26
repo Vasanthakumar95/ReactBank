@@ -1,18 +1,27 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { format, parseISO } from 'date-fns';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import ViewShot from 'react-native-view-shot';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 
 import { useTransactionStore } from '@/store/transactionStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import TransactionReceipt from '@/components/TransactionReceipt';
+
+type Feedback = { text: string; isError: boolean } | null;
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, isLoading, fetchTransactions } = useTransactionStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  const viewShotRef = useRef<ViewShot>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [feedback, setFeedback] = useState<Feedback>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,6 +35,53 @@ export default function TransactionDetailScreen() {
       fetchTransactions();
     }
   }, []);
+
+  const showFeedback = useCallback((text: string, isError: boolean) => {
+    setFeedback({ text, isError });
+    setTimeout(() => setFeedback(null), 3000);
+  }, []);
+
+  const captureReceipt = useCallback(async (): Promise<string | null> => {
+    if (!viewShotRef.current) return null;
+    return await viewShotRef.current.capture();
+  }, []);
+
+  const handleSaveToPhotos = useCallback(async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') {
+        showFeedback('Permission denied. Please allow photo access in Settings.', true);
+        return;
+      }
+      const uri = await captureReceipt();
+      if (!uri) return;
+      await MediaLibrary.saveToLibraryAsync(uri);
+      showFeedback('Receipt saved to Photos!', false);
+    } catch {
+      showFeedback('Failed to save receipt. Please try again.', true);
+    } finally {
+      setIsSaving(false);
+    }
+  }, [isSaving, captureReceipt, showFeedback]);
+
+  const handleShareReceipt = useCallback(async () => {
+    if (isSharing) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureReceipt();
+      if (!uri) return;
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: 'Share Transaction Receipt',
+      });
+    } catch {
+      showFeedback('Failed to share receipt. Please try again.', true);
+    } finally {
+      setIsSharing(false);
+    }
+  }, [isSharing, captureReceipt, showFeedback]);
 
   if (isLoading) {
     return (
@@ -51,30 +107,12 @@ export default function TransactionDetailScreen() {
 
   const { value, isNegative } = formatCurrency(transaction.amount);
 
-  const handleShare = async () => {
-    const dateOnly = format(parseISO(transaction.transferDate), 'd MMM yyyy');
-    await Share.share({
-      message: [
-        'Transaction Receipt',
-        `Ref: ${transaction.refId}`,
-        `Date: ${dateOnly}`,
-        `Recipient: ${transaction.recipientName}`,
-        `Amount: ${value}`,
-      ].join('\n'),
-    });
-  };
-
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <TouchableOpacity onPress={handleShare} hitSlop={8}>
-              <Ionicons name="share-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+      {/* Off-screen receipt rendered for capture only */}
+      <View style={styles.offScreen}>
+        <TransactionReceipt ref={viewShotRef} transaction={transaction} />
+      </View>
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Summary card */}
@@ -105,6 +143,45 @@ export default function TransactionDetailScreen() {
           <DetailRow label="Recipient Name" value={transaction.recipientName} />
           <DetailRow label="Transfer Name" value={transaction.transferName} last />
         </View>
+
+        {/* Action buttons */}
+        <View style={styles.actions}>
+          {feedback !== null && (
+            <View style={[styles.feedbackRow, feedback.isError ? styles.feedbackError : styles.feedbackSuccess]}>
+              <Text style={[styles.feedbackText, feedback.isError ? styles.feedbackTextError : styles.feedbackTextSuccess]}>
+                {feedback.text}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonPrimary, (isSaving || isSharing) && styles.buttonDisabled]}
+            onPress={handleSaveToPhotos}
+            disabled={isSaving || isSharing}
+            activeOpacity={0.85}
+          >
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonTextPrimary}>Save to Photos</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.buttonSecondary, (isSaving || isSharing) && styles.buttonSecondaryDisabled]}
+            onPress={handleShareReceipt}
+            disabled={isSaving || isSharing}
+            activeOpacity={0.85}
+          >
+            {isSharing ? (
+              <ActivityIndicator size="small" color="#1a3c6e" />
+            ) : (
+              <Text style={[styles.buttonTextSecondary, (isSaving || isSharing) && styles.buttonTextSecondaryDisabled]}>
+                Share Receipt
+              </Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -132,6 +209,13 @@ const styles = StyleSheet.create({
   notFoundText: {
     fontSize: 16,
     color: '#6B7280',
+  },
+
+  // Off-screen receipt for ViewShot capture
+  offScreen: {
+    position: 'absolute',
+    left: -9999,
+    top: -9999,
   },
 
   content: {
@@ -239,5 +323,77 @@ const styles = StyleSheet.create({
     color: '#1A1A2E',
     flex: 1,
     textAlign: 'right',
+  },
+
+  // Action buttons
+  actions: {
+    gap: 10,
+  },
+  feedbackRow: {
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+  },
+  feedbackSuccess: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  feedbackError: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FECACA',
+  },
+  feedbackText: {
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  feedbackTextSuccess: {
+    color: '#16A34A',
+  },
+  feedbackTextError: {
+    color: '#DC2626',
+  },
+  button: {
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPrimary: {
+    backgroundColor: '#1a3c6e',
+    shadowColor: '#1a3c6e',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  buttonSecondary: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#1a3c6e',
+  },
+  buttonDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonSecondaryDisabled: {
+    borderColor: '#D1D5DB',
+  },
+  buttonTextPrimary: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  buttonTextSecondary: {
+    color: '#1a3c6e',
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  buttonTextSecondaryDisabled: {
+    color: '#9CA3AF',
   },
 });
