@@ -1,16 +1,19 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
   FlatList,
   ListRenderItemInfo,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, Stack } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTransactionStore } from '@/store/transactionStore';
+import { useAuthStore } from '@/store/authStore';
 import TransactionCard from '@/components/TransactionCard';
 import { formatCurrency } from '@/utils/formatters';
 import { Transaction } from '@/types/transaction';
@@ -42,10 +45,22 @@ function EmptyState() {
 
 export default function TransactionListScreen() {
   const { transactions, isLoading, fetchTransactions } = useTransactionStore();
+  const { isAuthenticated, logout } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    router.replace('/login');
+  }, [logout]);
 
   if (isLoading) {
     return (
@@ -60,6 +75,15 @@ export default function TransactionListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity onPress={handleLogout} hitSlop={8}>
+              <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          ),
+        }}
+      />
       <FlatList<Transaction>
         data={transactions}
         keyExtractor={(item) => item.refId}

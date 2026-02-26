@@ -1,16 +1,24 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { format, parseISO } from 'date-fns';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTransactionStore } from '@/store/transactionStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 
 export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, isLoading, fetchTransactions } = useTransactionStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/login');
+    }
+  }, [isAuthenticated]);
 
   // Support deep-linking: fetch if the store hasn't loaded yet
   useEffect(() => {

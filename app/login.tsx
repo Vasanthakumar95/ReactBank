@@ -11,9 +11,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { useBiometricAuth } from '@/hooks/useBiometricAuth';
+import { useAuthStore } from '@/store/authStore';
 
 export default function LoginScreen() {
   const { isSupported, isEnrolled, isAuthenticating, authenticate } = useBiometricAuth();
+  const setAuthenticated = useAuthStore((state) => state.setAuthenticated);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const isAvailable = isSupported && isEnrolled;
@@ -29,6 +31,7 @@ export default function LoginScreen() {
     setErrorMessage(null);
     const result = await authenticate();
     if (result.success) {
+      setAuthenticated(true);
       router.replace('/');
     } else {
       setErrorMessage(result.reason ?? 'Authentication failed. Please try again.');
