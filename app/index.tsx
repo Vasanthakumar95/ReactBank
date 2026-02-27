@@ -16,20 +16,39 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { useTransactionStore } from '@/store/transactionStore';
 import { useAuthStore } from '@/store/authStore';
+import { useCurrencyStore, getConvertedAmount } from '@/store/currencyStore';
 import TransactionCard from '@/components/TransactionCard';
+import CurrencySelector from '@/components/CurrencySelector';
 import { formatCurrency } from '@/utils/formatters';
 import { Transaction } from '@/types/transaction';
+import { CurrencyCode } from '@/constants/currencies';
 
-function SummaryHeader({ transactions, lastUpdated }: { transactions: Transaction[]; lastUpdated: Date | null }) {
-  const total = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const { display, isNegative } = formatCurrency(total);
+function SummaryHeader({
+  transactions,
+  lastUpdated,
+  selectedCurrency,
+  exchangeRates,
+}: {
+  transactions: Transaction[];
+  lastUpdated: Date | null;
+  selectedCurrency: CurrencyCode;
+  exchangeRates: Record<string, number> | null;
+}) {
+  const rawTotal = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const convertedTotal = getConvertedAmount(rawTotal, exchangeRates, selectedCurrency);
+  const { display, isNegative } = formatCurrency(convertedTotal, selectedCurrency);
 
   return (
     <View style={summaryStyles.card}>
-      <Text style={summaryStyles.label}>Total Balance</Text>
-      <Text style={[summaryStyles.amount, isNegative ? summaryStyles.negative : summaryStyles.positive]}>
-        {display}
-      </Text>
+      <View style={summaryStyles.topRow}>
+        <View style={summaryStyles.labelCol}>
+          <Text style={summaryStyles.label}>Total Balance</Text>
+          <CurrencySelector />
+        </View>
+        <Text style={[summaryStyles.amount, isNegative ? summaryStyles.negative : summaryStyles.positive]}>
+          {display}
+        </Text>
+      </View>
       <Text style={summaryStyles.count}>{transactions.length} transaction{transactions.length !== 1 ? 's' : ''}</Text>
       {lastUpdated !== null && (
         <Text style={summaryStyles.lastUpdated}>Last updated: {format(lastUpdated, 'h:mm a')}</Text>
@@ -51,6 +70,7 @@ function EmptyState() {
 export default function TransactionListScreen() {
   const { transactions, isLoading, isRefreshing, fetchTransactions, refreshTransactions, lastUpdated } = useTransactionStore();
   const { isAuthenticated, logout } = useAuthStore();
+  const { selectedCurrency, exchangeRates } = useCurrencyStore();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -95,12 +115,21 @@ export default function TransactionListScreen() {
         renderItem={({ item }: ListRenderItemInfo<Transaction>) => (
           <TransactionCard
             transaction={item}
+            selectedCurrency={selectedCurrency}
+            exchangeRates={exchangeRates}
             onPress={() =>
               router.push({ pathname: '/transaction/[id]', params: { id: item.refId } })
             }
           />
         )}
-        ListHeaderComponent={<SummaryHeader transactions={transactions} lastUpdated={lastUpdated} />}
+        ListHeaderComponent={
+          <SummaryHeader
+            transactions={transactions}
+            lastUpdated={lastUpdated}
+            selectedCurrency={selectedCurrency}
+            exchangeRates={exchangeRates}
+          />
+        }
         ListEmptyComponent={<EmptyState />}
         contentContainerStyle={styles.list}
         refreshControl={
@@ -138,7 +167,7 @@ const styles = StyleSheet.create({
 
 const summaryStyles = StyleSheet.create({
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1a3c6e',
     borderRadius: 16,
     marginHorizontal: 16,
     marginTop: 16,
@@ -146,38 +175,46 @@ const summaryStyles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 20,
     shadowColor: '#1a3c6e',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: '#EEF2FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  labelCol: {
+    gap: 6,
   },
   label: {
     fontSize: 13,
-    color: '#6B7280',
-    marginBottom: 6,
+    color: 'rgba(255,255,255,0.65)',
     fontWeight: '500',
   },
   amount: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
-    marginBottom: 6,
+    flexShrink: 1,
+    textAlign: 'right',
+    marginLeft: 12,
   },
   positive: {
-    color: '#16A34A',
+    color: '#4ADE80',
   },
   negative: {
-    color: '#DC2626',
+    color: '#F87171',
   },
   count: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: 'rgba(255,255,255,0.5)',
   },
   lastUpdated: {
     fontSize: 11,
-    color: '#C4C9D4',
-    marginTop: 6,
+    color: 'rgba(255,255,255,0.35)',
+    marginTop: 4,
   },
 });
 

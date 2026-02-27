@@ -1,14 +1,20 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Transaction } from '@/types/transaction';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { CurrencyCode } from '@/constants/currencies';
+import { getConvertedAmount } from '@/store/currencyStore';
 
 interface Props {
   transaction: Transaction;
+  selectedCurrency: CurrencyCode;
+  exchangeRates: Record<string, number> | null;
   onPress: () => void;
 }
 
-export default function TransactionCard({ transaction, onPress }: Props) {
-  const { display, isNegative } = formatCurrency(transaction.amount);
+export default function TransactionCard({ transaction, selectedCurrency, exchangeRates, onPress }: Props) {
+  const isNegative = transaction.amount < 0;
+  const convertedAmount = getConvertedAmount(transaction.amount, exchangeRates, selectedCurrency);
+  const { display } = formatCurrency(convertedAmount, selectedCurrency);
   const initial = transaction.recipientName.charAt(0).toUpperCase();
 
   return (
