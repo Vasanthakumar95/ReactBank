@@ -32,7 +32,7 @@ export default function LoginScreen() {
     const result = await authenticate();
     if (result.success) {
       setAuthenticated(true);
-      router.replace('/');
+      setTimeout(() => router.replace('/'), 100);
     } else {
       setErrorMessage(result.reason ?? 'Authentication failed. Please try again.');
     }

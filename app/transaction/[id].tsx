@@ -28,7 +28,7 @@ export default function TransactionDetailScreen() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      router.replace('/login');
+      setTimeout(() => router.replace('/login'), 100);
     }
   }, [isAuthenticated]);
 
