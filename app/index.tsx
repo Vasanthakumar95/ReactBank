@@ -1,3 +1,6 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { format } from 'date-fns';
+import { router, Stack } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import {
   ActivityIndicator,
@@ -9,19 +12,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { format } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, Stack } from 'expo-router';
-import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { useTransactionStore } from '@/store/transactionStore';
-import { useAuthStore } from '@/store/authStore';
-import { useCurrencyStore, getConvertedAmount } from '@/store/currencyStore';
-import TransactionCard from '@/components/TransactionCard';
 import CurrencySelector from '@/components/CurrencySelector';
-import { formatCurrency } from '@/utils/formatters';
-import { Transaction } from '@/types/transaction';
+import TransactionCard from '@/components/TransactionCard';
 import { CurrencyCode } from '@/constants/currencies';
+import { useAuthStore } from '@/store/authStore';
+import { getConvertedAmount, useCurrencyStore } from '@/store/currencyStore';
+import { useTransactionStore } from '@/store/transactionStore';
+import { Transaction } from '@/types/transaction';
+import { formatCurrency } from '@/utils/formatters';
 
 function SummaryHeader({
   transactions,
@@ -179,15 +179,19 @@ const summaryStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 6,
+    overflow: 'visible',
   },
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
+    overflow: 'visible',
   },
   labelCol: {
+    flex: 1,
     gap: 6,
+    overflow: 'visible',
   },
   label: {
     fontSize: 13,
@@ -195,9 +199,9 @@ const summaryStyles = StyleSheet.create({
     fontWeight: '500',
   },
   amount: {
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: '800',
-    flexShrink: 1,
+    flexShrink: 0,
     textAlign: 'right',
     marginLeft: 12,
   },
