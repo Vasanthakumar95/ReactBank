@@ -5,14 +5,20 @@ import { format } from 'date-fns';
 
 import { Transaction } from '@/types/transaction';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { BASE_CURRENCY, CurrencyCode } from '@/constants/currencies';
+import { getConvertedAmount } from '@/store/currencyStore';
 
 interface TransactionReceiptProps {
   transaction: Transaction;
+  currencyCode?: CurrencyCode;
+  exchangeRates?: Record<string, number> | null;
 }
 
 const TransactionReceipt = forwardRef<ViewShot, TransactionReceiptProps>(
-  ({ transaction }, ref) => {
-    const { display, isNegative } = formatCurrency(transaction.amount);
+  ({ transaction, currencyCode = BASE_CURRENCY, exchangeRates = null }, ref) => {
+    const convertedAmount = getConvertedAmount(transaction.amount, exchangeRates, currencyCode);
+    const { display, isNegative } = formatCurrency(convertedAmount, currencyCode);
+    const { display: originalDisplay } = formatCurrency(transaction.amount, BASE_CURRENCY, { showSign: false });
     const generatedAt = format(new Date(), 'd MMM yyyy, hh:mm a');
 
     return (
@@ -28,10 +34,13 @@ const TransactionReceipt = forwardRef<ViewShot, TransactionReceiptProps>(
 
         {/* Amount spotlight */}
         <View style={styles.amountSection}>
-          <Text style={styles.amountLabel}>Amount</Text>
+          <Text style={styles.amountLabel}>Amount ({currencyCode})</Text>
           <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
             {display}
           </Text>
+          {currencyCode !== BASE_CURRENCY && (
+            <Text style={styles.originalAmountLabel}>≈ Original: {originalDisplay}</Text>
+          )}
           <View style={[styles.typeBadge, isNegative ? styles.typeBadgeDebit : styles.typeBadgeCredit]}>
             <Text style={[styles.typeBadgeText, isNegative ? styles.typeBadgeTextDebit : styles.typeBadgeTextCredit]}>
               {isNegative ? 'OUTGOING' : 'INCOMING'}
@@ -137,6 +146,12 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 32,
     fontWeight: '800',
+    marginBottom: 4,
+  },
+  originalAmountLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
     marginBottom: 10,
   },
   positive: {

@@ -116,7 +116,7 @@ export default function TransactionDetailScreen() {
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
       {/* Off-screen receipt rendered for capture only */}
       <View style={styles.offScreen}>
-        <TransactionReceipt ref={viewShotRef} transaction={transaction} />
+        <TransactionReceipt ref={viewShotRef} transaction={transaction} currencyCode={selectedCurrency} exchangeRates={exchangeRates} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
