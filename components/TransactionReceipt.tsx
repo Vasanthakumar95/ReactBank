@@ -12,7 +12,7 @@ interface TransactionReceiptProps {
 
 const TransactionReceipt = forwardRef<ViewShot, TransactionReceiptProps>(
   ({ transaction }, ref) => {
-    const { value, isNegative } = formatCurrency(transaction.amount);
+    const { display, isNegative } = formatCurrency(transaction.amount);
     const generatedAt = format(new Date(), 'd MMM yyyy, hh:mm a');
 
     return (
@@ -30,7 +30,7 @@ const TransactionReceipt = forwardRef<ViewShot, TransactionReceiptProps>(
         <View style={styles.amountSection}>
           <Text style={styles.amountLabel}>Amount</Text>
           <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
-            {value}
+            {display}
           </Text>
           <View style={[styles.typeBadge, isNegative ? styles.typeBadgeDebit : styles.typeBadgeCredit]}>
             <Text style={[styles.typeBadgeText, isNegative ? styles.typeBadgeTextDebit : styles.typeBadgeTextCredit]}>

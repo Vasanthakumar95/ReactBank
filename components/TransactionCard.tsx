@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function TransactionCard({ transaction, onPress }: Props) {
-  const { value, isNegative } = formatCurrency(transaction.amount);
+  const { display, isNegative } = formatCurrency(transaction.amount);
   const initial = transaction.recipientName.charAt(0).toUpperCase();
 
   return (
@@ -28,7 +28,7 @@ export default function TransactionCard({ transaction, onPress }: Props) {
 
       <View style={styles.right}>
         <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
-          {value}
+          {display}
         </Text>
         <View style={[styles.badge, isNegative ? styles.badgeDebit : styles.badgeCredit]}>
           <Text style={[styles.badgeText, isNegative ? styles.badgeTextDebit : styles.badgeTextCredit]}>

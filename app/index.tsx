@@ -22,13 +22,13 @@ import { Transaction } from '@/types/transaction';
 
 function SummaryHeader({ transactions, lastUpdated }: { transactions: Transaction[]; lastUpdated: Date | null }) {
   const total = transactions.reduce((sum, t) => sum + t.amount, 0);
-  const { value, isNegative } = formatCurrency(total);
+  const { display, isNegative } = formatCurrency(total);
 
   return (
     <View style={summaryStyles.card}>
       <Text style={summaryStyles.label}>Total Balance</Text>
       <Text style={[summaryStyles.amount, isNegative ? summaryStyles.negative : summaryStyles.positive]}>
-        {value}
+        {display}
       </Text>
       <Text style={summaryStyles.count}>{transactions.length} transaction{transactions.length !== 1 ? 's' : ''}</Text>
       {lastUpdated !== null && (

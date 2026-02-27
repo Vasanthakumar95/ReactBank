@@ -1,20 +1,34 @@
 import { format, parseISO } from 'date-fns';
+import { BASE_CURRENCY, CURRENCY_DECIMAL_PLACES, CurrencyCode, SUPPORTED_CURRENCIES } from '@/constants/currencies';
 
 export function formatDate(isoString: string): string {
   return format(parseISO(isoString), 'd MMM yyyy, hh:mm a');
 }
 
 export interface FormattedCurrency {
-  value: string;
+  display: string;
   isNegative: boolean;
 }
 
-export function formatCurrency(amount: number): FormattedCurrency {
+export function formatCurrency(
+  amount: number,
+  currencyCode: CurrencyCode = BASE_CURRENCY,
+  options: { showSign?: boolean } = {}
+): FormattedCurrency {
+  const { showSign = true } = options;
   const isNegative = amount < 0;
+  const decimalPlaces = CURRENCY_DECIMAL_PLACES[currencyCode];
+  const currency = SUPPORTED_CURRENCIES.find((c) => c.code === currencyCode)!;
+
   const absolute = Math.abs(amount).toLocaleString('en-MY', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimalPlaces,
+    maximumFractionDigits: decimalPlaces,
   });
-  const value = `${isNegative ? '-' : '+'}RM ${absolute}`;
-  return { value, isNegative };
+
+  const sign = showSign ? (isNegative ? '-' : '+') : '';
+  // Symbols ending with a letter (e.g. "RM") get a separating space; others (€, £, ¥, A$) do not
+  const needsSpace = /[a-zA-Z]$/.test(currency.symbol);
+  const display = `${sign}${currency.symbol}${needsSpace ? ' ' : ''}${absolute}`;
+
+  return { display, isNegative };
 }

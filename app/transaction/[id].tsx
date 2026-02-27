@@ -42,8 +42,8 @@ export default function TransactionDetailScreen() {
   }, []);
 
   const captureReceipt = useCallback(async (): Promise<string | null> => {
-    if (!viewShotRef.current) return null;
-    return await viewShotRef.current.capture();
+    const uri = await viewShotRef.current?.capture?.();
+    return uri ?? null;
   }, []);
 
   const handleSaveToPhotos = useCallback(async () => {
@@ -105,7 +105,7 @@ export default function TransactionDetailScreen() {
     );
   }
 
-  const { value, isNegative } = formatCurrency(transaction.amount);
+  const { display, isNegative } = formatCurrency(transaction.amount);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
@@ -132,7 +132,7 @@ export default function TransactionDetailScreen() {
           </View>
 
           <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
-            {value}
+            {display}
           </Text>
         </View>
 
