@@ -8,7 +8,9 @@ import * as Sharing from 'expo-sharing';
 
 import { useTransactionStore } from '@/store/transactionStore';
 import { useAuthStore } from '@/store/authStore';
+import { useCurrencyStore, getConvertedAmount } from '@/store/currencyStore';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { BASE_CURRENCY } from '@/constants/currencies';
 import TransactionReceipt from '@/components/TransactionReceipt';
 
 type Feedback = { text: string; isError: boolean } | null;
@@ -17,6 +19,7 @@ export default function TransactionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { transactions, isLoading, fetchTransactions } = useTransactionStore();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { selectedCurrency, exchangeRates } = useCurrencyStore();
 
   const viewShotRef = useRef<ViewShot>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,7 +108,9 @@ export default function TransactionDetailScreen() {
     );
   }
 
-  const { display, isNegative } = formatCurrency(transaction.amount);
+  const convertedAmount = getConvertedAmount(transaction.amount, exchangeRates, selectedCurrency);
+  const { display, isNegative } = formatCurrency(convertedAmount, selectedCurrency);
+  const { display: originalDisplay } = formatCurrency(transaction.amount, BASE_CURRENCY, { showSign: false });
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
@@ -134,6 +139,9 @@ export default function TransactionDetailScreen() {
           <Text style={[styles.amount, isNegative ? styles.negative : styles.positive]}>
             {display}
           </Text>
+          {selectedCurrency !== BASE_CURRENCY && (
+            <Text style={styles.originalAmount}>Original: {originalDisplay}</Text>
+          )}
         </View>
 
         {/* Detail rows card */}
@@ -282,6 +290,11 @@ const styles = StyleSheet.create({
   amount: {
     fontSize: 34,
     fontWeight: '800',
+  },
+  originalAmount: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginTop: 4,
   },
   positive: {
     color: '#16A34A',
