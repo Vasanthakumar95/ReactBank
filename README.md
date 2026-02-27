@@ -30,13 +30,9 @@ The core purpose is to give users a secure, readable view of their banking trans
 
 ### App Demo
 
-> Replace `demo.gif` below with your actual demo file path after adding it to the repo.
-
 ![ReactBank Demo](./assets/demo.gif)
 
 A walkthrough of biometric login, transaction browsing, currency switching, receipt export, and pull to refresh.
-
-_To record a demo, use your device's screen recorder or a tool like [GIPHY Capture](https://giphy.com/apps/giphycapture) (macOS) or [ScreenToGif](https://www.screentogif.com/) (Windows). Place the .gif file in the /assets folder and rename it demo.gif._
 
 ---
 
