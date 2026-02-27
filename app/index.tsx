@@ -21,13 +21,11 @@ export default function IndexScreen() {
   useEffect(() => {
     if (!isAuthenticated) {
       setTimeout(() => router.replace('/login'), 100);
-      console.log("TransactionListScreen", isAuthenticated);
     }
-    console.log("TransactionListScreen", isAuthenticated);
   }, [isAuthenticated]);
 
   useEffect(() => {
-    fetchTransactions(); console.log("TransactionListScreen");
+    fetchTransactions(); 
   }, []);
 
   const handleLogout = useCallback(() => {
